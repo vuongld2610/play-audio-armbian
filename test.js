@@ -5,7 +5,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');  // Sử dụng fs cho các thao tác stream
 
-const fsPromises   = require('fs').promises;  // Import fs.promises
+const fsPromises = require('fs').promises;  // Import fs.promises
 const { all } = require('axios');
 
 // Kiểm tra hệ điều hành
@@ -70,7 +70,7 @@ let getAllMP3files = async () => {
     try {
         const files = await fsPromises.readdir(__dirname);  // Đọc thư mục một cách bất đồng bộ
         const mp3Files = files.filter(file => path.extname(file).toLowerCase() === '.mp3');
-        return mp3Files.map(mp3 =>  path.join(__dirname, mp3));
+        return mp3Files.map(mp3 => path.join(__dirname, mp3));
 
     } catch (err) {
         console.error('Error reading directory:', err);
@@ -147,7 +147,7 @@ let playFilesSequentially = (mp3Paths, index = 0) => {
 
 
 getLink().then(async (links) => {
-    await downloadSoundFromURL(links[0]);
+    await Promise.all(links.map(link => downloadSoundFromURL(link)));
     let allMP3 = await getAllMP3files();
     console.log(allMP3);
     await playFilesSequentially(allMP3);
