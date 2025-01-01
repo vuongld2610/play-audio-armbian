@@ -9,6 +9,7 @@
   "author": "vuongld",
   "license": "ISC",
   "dependencies": {
-    "play-sound": "^1.1.6"
+    "axios": "^1.7.9",
+    "sound-play": "^1.1.0"
   }
 }
