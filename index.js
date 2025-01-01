@@ -1,48 +1,47 @@
-const axios = require('axios');
-const fs = require('fs');
+const { spawn } = require('child_process');
 const path = require('path');
-const player = require('play-sound')(opts = {});
 
-async function playSoundFromUrl(url) {
-    try {
-        // Tải tệp MP3 về bộ nhớ tạm thời
-        const response = await axios({
-            method: 'get',
-            url: url,
-            responseType: 'stream'
-        });
+// Danh sách các file MP3
+const files = [
+  path.join(__dirname, 'a.mp3'),
+  path.join(__dirname, 'b.mp3'),
+  path.join(__dirname, 'c.mp3')
+];
 
-        const filePath = path.join(__dirname, 'temp.mp3');
-        const writer = fs.createWriteStream(filePath);
+// Kiểm tra hệ điều hành
+const isWindows = process.platform === 'win32';
+const isLinux = process.platform === 'linux';
 
-        // Đảm bảo tệp được ghi xong trước khi tiếp tục
-        await new Promise((resolve, reject) => {
-            response.data.pipe(writer);
+// Đường dẫn đến wmplayer.exe trên Windows
+const wmplayerPath = 'C:\\Program Files\\Windows Media Player\\wmplayer.exe';
 
-            writer.on('finish', resolve);
-            writer.on('error', reject);
-        });
+// Hàm phát từng file trong danh sách
+function playFilesSequentially(files, index = 0) {
+  if (index >= files.length) return; // Kết thúc khi hết danh sách
 
-        // Phát tệp sau khi tải xong, bọc play vào một Promise
-        await new Promise((resolve, reject) => {
-            player.play(filePath, (err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });
-        });
+  console.log(`Đang phát file: ${files[index]}`);
 
-        console.log('Sound played successfully!');
+  let player;
 
-        // Xóa tệp sau khi phát xong
-        // fs.unlinkSync(filePath);
-    } catch (err) {
-        console.error('Error playing sound:', err);
+  if (isWindows) {
+    // Sử dụng Windows Media Player (wmplayer) trên Windows
+    player = spawn(wmplayerPath, [files[index]]);
+  } else if (isLinux) {
+    // Sử dụng mpg123 hoặc ffmpeg trên Linux
+    player = spawn('play', [files[index]]);
+  } else {
+    console.error('Hệ điều hành không được hỗ trợ');
+    return;
+  }
+
+  player.on('close', (code) => {
+    if (code !== 0) {
+      console.error(`Lỗi khi phát file: ${files[index]}`);
     }
+    // Phát file tiếp theo
+    playFilesSequentially(files, index + 1);
+  });
 }
 
-// Ví dụ: Chơi nhạc từ URL
-playSoundFromUrl('https://download.samplelib.com/mp3/sample-12s.mp3');
-console.log("end")
+// Bắt đầu phát danh sách
+playFilesSequentially(files);
